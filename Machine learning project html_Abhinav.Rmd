@@ -1,0 +1,112 @@
+---
+title: "Machine learning project_Abhinav"
+author: "Abhinav Singh"
+date: "Monday, July 27, 2015"
+output: html_document
+---
+
+
+
+Installing packages and bringing in training and testing data into Rstudio. The data was downloaded and saved from the provided link.
+
+```{r}
+install.packages("caret")
+install.packages("kernlab")
+library(caret);
+library(kernlab);
+training1 = read.csv("D:\\R\\Machine learning\\pml-training.csv", header = T,stringsAsFactors = FALSE)
+testing1 <- read.csv("D:\\R\\Machine learning\\pml-testing.csv", header = T, stringsAsFactors = FALSE)
+
+```
+# Not considering first 6 columns since first 6 are time stamp of observation as captured by the sensors and similar time series data, which did not appear to be useful for predicting the ‘ classe’ of exercise.
+
+You can also embed plots, for example:
+
+```trainfeatures = training1[,7:159]
+testFeatures <- testing1[,7:159]
+
+```
+# The same variables are selected for testing dataset as for training dataset.
+```
+trainfeatures <- suppressWarnings(data.frame(sapply(trainfeatures, as.numeric)))
+testFeatures <- suppressWarnings(data.frame(sapply(testFeatures, as.numeric)))
+```
+# For missing value treatment, zeroes are introduced.
+```trainfeatures[is.na(trainfeatures)] <- 0
+testFeatures[is.na(testFeatures)] <- 0
+
+```
+# Variables with very low variability were not considered for the model and removed as shown below.
+```nearZero <- nearZeroVar(trainfeatures)
+trainfeatures <- trainfeatures[,-nearZero]
+testFeatures <- testFeatures[,-nearZero]
+
+
+```
+# Seed is set to 123 for data partitioning.
+
+```intrain <- createDataPartition(y= training1$classe, p = 0.70, list = FALSE)
+training = trainfeatures[intrain,]
+testing = trainfeatures[-intrain,]
+
+
+```
+# Data is partitioned using caret package. 70% of observations are kept for training the model and remaining 30% for testing it.
+# Classe variable is specified as a factor to train the model appropriately.
+```y = as.factor(training1$classe[intrain])
+ytest = as.factor(training1$classe[-intrain])
+cor <- findCorrelation(cor(training))
+
+```
+# To identify highly correlated variables in the training and testing data set, the following commands are used so that highly correlated variables together are not used.
+# randomForest package has been installed and library has been called as below.
+library("randomForest", lib.loc="D:/R-3.2.0/library")
+# predictionmodel1 has been built as shown below using 'classe' as predicted variable(denoted by y) and processed data in all the above steps called 'training'. Importance has been set as true.
+```predictionmodel1 <- randomForest(y ~ ., importance  = TRUE, data = training)
+ncol(training)
+predictionmodel1
+
+```
+# As can be seen, type of random forest if classification, since the predicted variable is categorical 'classe'. Number of trees made in randonForest is 500, which is the default value. No. of variables tried at each splitis 7.
+```nrow(training)
+dim(training)
+dim(testing)
+predict(predictionmodel1,newdata=testing)
+predictionmodel2 = predict(predictionmodel1,newdata=testing)
+
+```
+#Values are predicted for testing dataset(remaining 30% of observations) and stored in predictionmodel2
+#Confusionmatrix for predicted and actual value of 'classes' is created as shown below.
+```confusionMatrix(testing$classe, predictionmoddel2)
+confusionMatrix(testing$classe, predictionmodel2)
+confusionMatrix(ytest,predictionmodel2)
+
+
+```
+#Confusion matrix shows accuracy of .9961
+```predictionmodel3 = predict(predictionmodel1,newdata=testing1)
+predictionmodel3
+install.packages("rattle")
+rf<-train(y ~ ., data=training, method="rf", prox=TRUE, ntree=500)
+
+
+```
+#Tried randomforest with train..went on indefenitely, had to force stop.
+# Tried rpart, result was with low accuracy
+```modFit <- train(y ~ .,method="rpart",data=training)
+modFit
+importance(predictionmodel1)
+predict(modFit,newdata=testing)
+predictionmodel4 = predict(modFit,newdata=testing)
+confusionMatrix(ytest, predictionmodel4)
+
+
+```
+# As can be seen above, accuracy using rpart on the testing dataset (remaining30%) is low, hence I didnt use this model for making predictions.
+```ctrl <- trainControl(method = "repeatedcv", repeats = 5, number = 10)
+ctrl
+savehistory("D:/R/Machine learning/Machine learning project_Abhinav.Rhistory")
+
+
+```
+
